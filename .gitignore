@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build Output
+dist/
+out/
+build/
+
+# Environment variables
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDEs
+.vscode/
+.idea/
+
+# Backups and temporary files
+*.backup
+*.bak
+*.tmp
+BUG_FIXES_MANUAL.txt
+fix_renderer.py

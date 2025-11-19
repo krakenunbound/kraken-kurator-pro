@@ -1,0 +1,36 @@
+{
+  "name": "kraken-super-kurator",
+  "version": "1.0.0",
+  "description": "A merged curator for video, audio, and images.",
+  "main": "main.js",
+  "scripts": {
+    "start": "npx electron .",
+    "dist": "npx electron-builder"
+  },
+  "keywords": [],
+  "author": "The Kraken",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "electron": "^39.2.2",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "ffmpeg-static": "latest",
+    "ffprobe-static": "latest",
+    "music-metadata": "^7.14.0",
+    "node-id3": "latest"
+  },
+  "build": {
+    "appId": "com.kraken.superkurator",
+    "productName": "Kraken Super Kurator",
+    "win": {
+      "target": "portable",
+      "icon": "icon.ico"
+    },
+    "files": [
+      "**/*",
+      "!**/.npm/**"
+    ]
+  }
+}

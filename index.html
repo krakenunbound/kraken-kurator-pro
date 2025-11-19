@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>🦑 Kraken Super Kurator</title>
+  <style>
+    /* Base styles from Video Curator */
+    * { box-sizing: border-box; }
+    body { 
+      margin: 0; 
+      background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+      color: #e0e0e0; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+    }
+    #main { display: flex; height: 100vh; gap: 1px; background: rgba(255,255,255,0.05); }
+
+    /* ========== LEFT SIDEBAR ========== */
+    #left { 
+      width: 320px;
+      min-width: 200px;
+      max-width: 60%;
+      background: rgba(15, 15, 30, 0.95);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(0, 200, 255, 0.2);
+      position: relative;
+    }
+    #resize-handle {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 8px; cursor: ew-resize; z-index: 100;
+      background: transparent; transition: background 0.2s;
+    }
+    #resize-handle:hover { background: rgba(0, 212, 255, 0.3); }
+    #resize-handle.resizing { background: rgba(0, 212, 255, 0.5); }
+    .sidebar-header {
+      padding: 20px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-bottom: 1px solid rgba(0, 200, 255, 0.2);
+    }
+    .sidebar-header h1 {
+      margin: 0 0 15px 0; font-size: 18px; font-weight: 600; color: #00d4ff;
+      text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+    }
+    .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    button { 
+      background: linear-gradient(135deg, #2d2d44 0%, #1f1f30 100%);
+      color: #e0e0e0; border: 1px solid rgba(0, 200, 255, 0.3);
+      padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 500;
+      border-radius: 6px; transition: all 0.3s ease;
+    }
+    button:hover {
+      background: linear-gradient(135deg, #3d3d54 0%, #2f2f40 100%);
+      border-color: rgba(0, 200, 255, 0.6); transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+    }
+    button.delete { 
+      background: linear-gradient(135deg, #441515 0%, #2d0f0f 100%);
+      border-color: rgba(255, 50, 50, 0.4); color: #ff6b6b;
+    }
+    button.delete:hover {
+      background: linear-gradient(135deg, #552020 0%, #3d1515 100%);
+      border-color: rgba(255, 50, 50, 0.8);
+      box-shadow: 0 4px 12px rgba(255, 50, 50, 0.3);
+    }
+    .view-toggle { margin-top: 12px; display: flex; gap: 8px; }
+    .view-toggle button { flex: 1; padding: 8px; font-size: 12px; }
+    .view-toggle button.active {
+      background: linear-gradient(135deg, #00a8cc 0%, #006b8a 100%);
+      border-color: rgba(0, 212, 255, 0.8); color: white;
+    }
+    .selection-controls { margin-top: 12px; display: flex; gap: 8px; align-items: center; }
+    .selection-controls button { flex: 1; padding: 6px; font-size: 11px; }
+    .selection-controls span { font-size: 11px; color: #00d4ff; font-weight: 600; }
+
+    /* Playlist / Grid Styles (Identical) */
+    .playlist-container { flex: 1; overflow-y: auto; padding: 10px; }
+    #playlist { list-style: none; padding: 0; margin: 0; }
+    #playlist li { 
+      padding: 12px 14px 12px 40px; cursor: pointer; border-radius: 6px; margin-bottom: 4px;
+      background: rgba(30, 30, 50, 0.5); border: 1px solid transparent; transition: all 0.2s ease;
+      font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative;
+    }
+    #playlist li input[type="checkbox"] {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; cursor: pointer; accent-color: #00d4ff;
+    }
+    #playlist li:hover {
+      background: rgba(40, 40, 60, 0.8); border-color: rgba(0, 200, 255, 0.3);
+      transform: translateX(4px);
+    }
+    #playlist li.selected { 
+      background: linear-gradient(90deg, rgba(0, 168, 204, 0.3) 0%, rgba(0, 107, 138, 0.3) 100%);
+      border-color: rgba(0, 212, 255, 0.6); color: #00d4ff; font-weight: 500;
+    }
+    #playlist li.checked {
+      background: linear-gradient(90deg, rgba(255, 200, 0, 0.2) 0%, rgba(255, 150, 0, 0.2) 100%);
+      border-color: rgba(255, 200, 0, 0.6);
+    }
+    #playlist li.checked.selected {
+      background: linear-gradient(90deg, rgba(0, 200, 255, 0.4) 0%, rgba(255, 200, 0, 0.3) 100%);
+    }
+    
+    #thumbs { 
+      display: none; 
+      flex-wrap: wrap; 
+      gap: 12px; 
+      padding: 10px;
+    }
+    .thumb { 
+      width: 140px; background: rgba(30, 30, 50, 0.5); border: 2px solid transparent;
+      border-radius: 8px; padding: 8px; cursor: pointer; transition: all 0.3s ease;
+      overflow: hidden; position: relative;
+    }
+    .thumb input[type="checkbox"] {
+      position: absolute; top: 12px; left: 12px; width: 20px; height: 20px;
+      cursor: pointer; z-index: 10; accent-color: #00d4ff;
+    }
+    .thumb:hover {
+      border-color: rgba(0, 200, 255, 0.5); transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 212, 255, 0.2);
+    }
+    .thumb.selected {
+      border-color: rgba(0, 212, 255, 0.8); background: rgba(0, 168, 204, 0.2);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    }
+    .thumb.checked {
+      border-color: rgba(255, 200, 0, 0.8); background: rgba(255, 200, 0, 0.2);
+      box-shadow: 0 0 20px rgba(255, 200, 0, 0.3);
+    }
+    .thumb.checked.selected {
+      border-color: rgba(0, 212, 255, 0.8);
+      background: linear-gradient(135deg, rgba(0, 200, 255, 0.3) 0%, rgba(255, 200, 0, 0.2) 100%);
+    }
+    .thumb img { 
+      width: 100%; height: 79px; object-fit: cover;
+      background: #1a1a2e; border-radius: 4px; display: block;
+    }
+    .thumb div {
+      margin-top: 6px; font-size: 11px; color: #b0b0b0; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; text-align: center;
+    }
+
+    /* ========== RIGHT PANEL ========== */
+    #right { 
+      flex: 1; display: flex; flex-direction: column;
+      background: rgba(15, 15, 30, 0.8); backdrop-filter: blur(10px);
+      overflow-y: auto;
+    }
+    
+    /* ========== VIDEO CONTAINER ========== */
+    #video-container { 
+      flex-shrink: 0;
+      flex-grow: 1;
+      min-height: 300px;
+      background: #000; display: flex; align-items: center; justify-content: center;
+      position: relative; border-radius: 12px; margin: 12px; overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); transition: all 0.3s ease;
+    }
+    #video-container.drag-over {
+      border: 3px dashed rgba(0, 212, 255, 0.8);
+      background: rgba(0, 212, 255, 0.05);
+    }
+    #video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+    #audio { display: none; }
+    #image { display: none; max-width: 100%; max-height: 100%; object-fit: contain; }
+    #placeholder { 
+      text-align: center; font-size: 18px; color: rgba(255, 255, 255, 0.3);
+      padding: 40px; transition: all 0.3s ease;
+    }
+    #placeholder::before {
+      content: '🦑'; display: block; font-size: 64px;
+      margin-bottom: 20px; opacity: 0.3;
+    }
+    
+    /* ========== CONTROLS ========== */
+    #controls { 
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+      background: rgba(15, 15, 30, 0.95); border-top: 1px solid rgba(0, 200, 255, 0.2);
+      flex-wrap: wrap;
+    }
+    #controls button { padding: 8px 16px; font-size: 13px; }
+    #play-btn {
+      background: linear-gradient(135deg, #00a8cc 0%, #006b8a 100%);
+      border-color: rgba(0, 212, 255, 0.5); color: white;
+      font-weight: 600; min-width: 80px;
+    }
+    #controls label { font-size: 12px; color: #a0a0a0; font-weight: 500; }
+    #controls select,
+    #converter-panel select,
+    #batch-editor-panel select {
+      background: rgba(30, 30, 50, 0.8); color: #e0e0e0;
+      border: 1px solid rgba(0, 200, 255, 0.3); padding: 6px 10px;
+      border-radius: 6px; font-size: 12px; cursor: pointer; outline: none;
+    }
+    #time {
+      font-size: 12px; color: #a0a0a0; font-family: 'Courier New', monospace;
+      min-width: 100px; text-align: center;
+    }
+    input[type="range"] {
+      flex: 1; min-width: 100px; height: 6px; -webkit-appearance: none;
+      appearance: none; background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px; outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
+      background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+      border-radius: 50%; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 212, 255, 0.5); transition: all 0.2s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    #volume { max-width: 100px; }
+    
+    /* ========== METADATA ========== */
+    #meta { 
+      flex-shrink: 0;
+      font-size: 12px; color: #a0a0a0; padding: 12px 20px;
+      background: rgba(0, 0, 0, 0.3); border-top: 1px solid rgba(0, 200, 255, 0.1);
+      font-family: 'Courier New', monospace;
+    }
+    
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 200, 255, 0.3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0, 200, 255, 0.5); }
+    
+    /* ========== AUDIO PANEL STYLES ========== */
+    #batch-editor-panel,
+    #metadata-panel,
+    #converter-panel {
+      flex-shrink: 0;
+      display: none; /* Hidden by default */
+      padding: 16px 20px;
+      background: rgba(10, 10, 20, 0.5);
+      border-top: 1px solid rgba(0, 200, 255, 0.2);
+    }
+    #batch-editor-panel h3,
+    #metadata-panel h3,
+    #converter-panel h3 {
+      margin: 0 0 12px 0; color: #00d4ff; font-size: 14px; font-weight: 600;
+    }
+    .meta-grid {
+      display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center;
+    }
+    #batch-editor-panel label,
+    #metadata-panel label { font-size: 12px; color: #a0a0a0; }
+    #batch-editor-panel input[type="text"],
+    #metadata-panel input[type="text"],
+    #metadata-panel textarea {
+      background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 200, 255, 0.3);
+      color: #e0e0e0; padding: 6px 8px; border-radius: 4px; font-size: 13px;
+      width: 100%;
+    }
+    #metadata-panel textarea { grid-column: 2 / 3; }
+    .cover-art-container { display: flex; gap: 12px; margin-top: 12px; justify-content: center; }
+    .cover-art-container > div { width: 250px; }
+    #cover-preview, #cover-replacement-box {
+      width: 100%; aspect-ratio: 1 / 1; background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(0,200,255,0.3); border-radius: 8px; display: flex;
+      align-items: center; justify-content: center; overflow: hidden;
+    }
+    #cover-preview-img, #cover-replacement-img {
+      width: 100%; height: 100%; object-fit: cover; display: none;
+    }
+    #cover-preview-none, #cover-replacement-prompt { font-size: 12px; color: #888; text-align: center; padding: 10px; }
+    #cover-replacement-box {
+      border: 2px dashed rgba(255,255,255,0.4); transition: all 0.2s;
+    }
+    #cover-filename { font-size: 11px; color: #00d4ff; display: block; margin-top: 4px; }
+    .meta-buttons { margin-top: 10px; display: flex; gap: 8px; }
+    .meta-buttons button { flex: 2; }
+    #btn-choose-cover {
+      flex: 1; padding: 6px; font-size: 12px;
+      background: #333; border-color: #555;
+    }
+    
+    #converter-panel {
+      display: none; /* Hidden by default */
+    }
+    .converter-grid {
+      display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+    }
+    #convert-status {
+      font-size: 12px; color: #a0a0a0;
+    }
+  </style>
+</head>
+<body>
+  <div id="main">
+    <div id="left">
+      <div id="resize-handle"></div>
+      <div class="sidebar-header">
+        <h1>🦑 KRAKEN KURATOR</h1>
+        <div class="button-group">
+          <button id="btn-open-folder">📁 Folder</button>
+          <button id="btn-open-files">📄 Files</button>
+        </div>
+        <div class="view-toggle">
+          <button id="btn-view-list" class="active">📋 List</button>
+          <button id="btn-view-thumbs">🖼️ Grid</button>
+        </div>
+        <div class="selection-controls">
+          <button id="btn-select-all">✓ All</button>
+          <button id="btn-select-none">✗ None</button>
+          <span id="selection-count">0 selected</span>
+        </div>
+      </div>
+      <div class="playlist-container">
+        <ul id="playlist"></ul>
+        <div id="thumbs"></div>
+      </div>
+    </div>
+    
+    <div id="right">
+      <div id="video-container">
+        <video id="video" loop></video>
+        <audio id="audio"></audio>
+        <img id="image" style="display: none;">
+        <div id="placeholder">Drop files or folder here<br><small style="opacity:0.6">MP4 • MOV • MP3 • WAV • JPG • PNG</small></div>
+      </div>
+      
+      <!-- ========== BATCH EDITOR ========== -->
+      <div id="batch-editor-panel">
+        <h3>⚡ Batch Editor</h3>
+        <div class="meta-grid">
+          <label>Artist:</label> <input type="text" id="batch-artist" placeholder="Apply to all selected">
+          <label>Album:</label> <input type="text" id="batch-album" placeholder="Apply to all selected">
+          <label>Genre:</label> <input type="text" id="batch-genre" placeholder="Apply to all selected">
+        </div>
+        <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" id="batch-get-title" style="width: 18px; height: 18px; accent-color: #00d4ff;">
+            <span style="font-size: 12px; color: #a0a0a0;">Get Title from Filename</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" id="batch-auto-number" style="width: 18px; height: 18px; accent-color: #00d4ff;">
+            <span style="font-size: 12px; color: #a0a0a0;">Auto-number Tracks</span>
+          </label>
+        </div>
+        <div class="meta-buttons" style="margin-top: 12px;">
+          <button id="btn-apply-batch">📋 Apply to Selected</button>
+          <button id="btn-convert-selected">⚡ Convert Selected to MP3</button>
+          <button id="btn-ai-rename">🤖 AI Rename Duplicates</button>
+        </div>
+      </div>
+      
+      <div id="metadata-panel">
+        <h3>📝 Metadata Editor</h3>
+        <div class="meta-grid">
+          <label>Title:</label> 
+          <div style="display: flex; gap: 4px;">
+            <input type="text" id="meta-title" style="flex: 1;">
+            <button id="btn-title-from-filename" style="padding: 4px 12px; font-size: 12px;" title="Get title from filename">📄→📝</button>
+          </div>
+          <label>Artist:</label> <input type="text" id="meta-artist">
+          <label>Album:</label> <input type="text" id="meta-album">
+          <label>Genre:</label> <input type="text" id="meta-genre">
+          
+          <label>Track:</label> <input type="text" id="meta-track" style="width: 70px;">
+          
+          <label>Comment:</label> <textarea id="meta-comment" rows="2"></textarea>
+        </div>
+        <div class="cover-art-container">
+          <div>
+            <label>Existing Cover Art:</label>
+            <div id="cover-preview">
+              <img id="cover-preview-img">
+              <span id="cover-preview-none">None</span>
+            </div>
+          </div>
+          <div>
+            <label>Replacement Cover Art:</label>
+            <div id="cover-replacement-box">
+              <img id="cover-replacement-img">
+              <span id="cover-replacement-prompt">Drag image here</span>
+            </div>
+          </div>
+        </div>
+        <input type="file" id="cover-art-input" accept="image/*" style="display: none;">
+        <span id="cover-filename"></span>
+        <div class="meta-buttons">
+          <button id="btn-choose-cover">🖼️ Choose Image File</button>
+          <button id="btn-save-meta">💾 Save Metadata</button>
+          <button id="btn-ai-suggest">🤖 AI Suggest</button>
+        </div>
+      </div>
+      
+      <div id="converter-panel">
+        <h3>⚡ WAV to MP3 Converter</h3>
+        <div class="converter-grid">
+          <label>Quality:</label>
+          <select id="vbr-quality">
+            <option value="0">V0 — Max Quality (~320 kbps)</option>
+            <option value="2" selected>V2 — YouTube Perfect (~200 kbps)</option>
+            <option value="4">V4 — Small & Great (~160 kbps)</option>
+          </select>
+          <button id="btn-convert-wav">⚡ Convert</button>
+          <span id="convert-status">Ready to convert</span>
+        </div>
+      </div>
+
+      <div id="controls">
+        <button id="btn-prev">⏮ Prev</button>
+        <button id="play-btn">▶ Play</button>
+        <button id="btn-next">Next ⏭</button>
+        <span id="time">00:00 / 00:00</span>
+        <input type="range" id="progress" min="0" max="1000" value="0">
+        <label>Speed:</label>
+        <select id="speed">
+          <option>0.5x</option>
+          <option>0.75x</option>
+          <option selected>1.0x</option>
+          <option>1.25x</option>
+          <option>1.5x</option>
+          <option>2.0x</option>
+        </select>
+        <label>Vol:</label>
+        <input type="range" id="volume" min="0" max="100" value="100">
+        <button id="btn-move">📦 Move</button>
+        <button id="btn-trash" class="delete">🗑️ Trash</button>
+      </div>
+      
+      <div id="meta">Drop files or open a folder to begin</div>
+    </div>
+  </div>
+  
+  <script src="renderer-main.js"></script>
+  </body>
+</html>
