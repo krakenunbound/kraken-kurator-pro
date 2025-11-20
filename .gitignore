@@ -27,3 +27,4 @@ npm-debug.log*
 *.tmp
 BUG_FIXES_MANUAL.txt
 fix_renderer.py
+.github_pat
